@@ -6,15 +6,28 @@ from imutils.video import VideoStream
 from imutils.video import FPS
 from imutils.object_detection import non_max_suppression
 import numpy as np
+import pytesseract
 import argparse
 import imutils
 import time
 import cv2
+import textract
+import pyocr
+from PIL import Image
+import os
+import pyocr.builders
 
 min_confidence = 0.5
 width=320
 height=320
 east= "frozen_east_text_detection.pb"
+tools = pyocr.get_available_tools()[0]
+
+
+# Define config parameters.
+# '-l eng'  for using the English language
+# '--oem 1' for using LSTM OCR Engine
+config = ('-l eng --oem 1 --psm 3')
 
 def decode_predictions(scores, geometry):
 	# grab the number of rows and columns from the scores volume, then
@@ -152,6 +165,27 @@ def text_video():
 
 			# draw the bounding box on the frame
 			cv2.rectangle(orig, (startX, startY), (endX, endY), (0, 255, 0), 2)
+
+			im_c = orig[startY:endY, startX:endX]
+
+			im_c = cv2.cvtColor(im_c, cv2.COLOR_BGR2GRAY)
+			im_c = cv2.threshold(im_c, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+			cv2.imwrite('test.png', im_c)
+
+			im_text = pytesseract.image_to_string('test.png', config=config)
+			cv2.putText(orig, im_text, (startX - 10, startY-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+
+			print(im_text)
+			os.remove('test.png')
+
+			cv2.imshow("Text Detected", im_c)
+
+
+
+
+
+
+
 
 		# update the FPS counter
 		fps.update()
